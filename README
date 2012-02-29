@@ -1,0 +1,6 @@
+Download the latest IDEA 11.1 EAP, install the latest Kotlin plugin and the Java project from here.
+
+IDEA EAP: http://confluence.jetbrains.net/display/IDEADEV/IDEA+11.1+EAP
+Kotlin plugin and compiler (just download the latest artifacts): http://teamcity.jetbrains.com/project.html?projectId=project67
+
+When you create a project and open .kt file IDEA will prompt you to specify Kotlin runtime lib, to do it you should unpack Kotlin compiler and specify lib/kotlin-runtime.jar as a runtime lib.
