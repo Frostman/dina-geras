@@ -39,6 +39,8 @@ enum class Role {
 class User(val login : String, val password : String, val role : Role, val lastModified : Long) {
     val passwordStrange : String = "100%"
 
+    //todo think about password hashing
+
     fun toString() = "${login} ${password} ${if (role==Role.ADMIN) 0 else 1} $lastModified"
 
     fun asB64String() = "${login.toB64()} ${password.toB64()} ${if (role==Role.ADMIN) 0 else 1} $lastModified"
@@ -58,13 +60,19 @@ fun String.toB64() = Base64.encodeBase64URLSafeString(this.getBytes()).sure()
 
 fun String.fromB64() = StringUtils.newStringUtf8(Base64.decodeBase64(this.getBytes())).sure()
 
+fun checkCredentials(val login : String, val password : String, val dbPath : String = "database") : Boolean {
+    decryptFile("test key", File(dbPath))
+    val db = AuthDb(dbPath)
+    db.load()
+    val result = db.users.get(login)?.password.equals(password)
+    encryptFile("test key", File(dbPath))
+
+    return result
+}
+
 fun main(args : Array<String>) {
     val db = AuthDb("database")
     db.users.put("admin", User("admin", "admin", Role.ADMIN, 0))
     db.save()
     encryptFile("test key", File("database"))
-
-    decryptFile("test key", File("database"))
-    db.load()
-    println(db.users)
 }

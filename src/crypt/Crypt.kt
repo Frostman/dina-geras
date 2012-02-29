@@ -23,11 +23,13 @@ fun encryptFile(key : String, from : File, to : File? = null) {
 }
 
 // if to == null then use from, always returns decrypted content
-fun decryptFile(key : String, from : File, to : File? = null) : String {
+fun decryptFile(key : String, from : File, onlyRead : Boolean = false, to : File? = null) : String {
     val encryptor = TextEncryptor()
     encryptor.setPassword(key)
     val content = encryptor.decrypt(from.getLines()).sure()
-    FileUtils.writeStringToFile(to ?: from, content)
+    if (!onlyRead) {
+        FileUtils.writeStringToFile(to ?: from, content)
+    }
     return content
 }
 
