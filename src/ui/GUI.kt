@@ -1,45 +1,67 @@
 package ui
 
-import javax.swing.JDialog
+import auth.AuthDb
+import auth.Role
+import auth.User
+import auth.checkCredentials
+import crypt.encryptFile
+import java.awt.Color
 import java.awt.Frame
 import java.awt.Toolkit
-import javax.swing.JTextField
-import java.awt.event.FocusListener
 import java.awt.event.FocusEvent
-import javax.swing.text.JTextComponent
-import java.awt.Color
-import javax.swing.JPasswordField
-import javax.swing.JButton
-import javax.swing.JWindow
-import javax.swing.WindowConstants
-import java.awt.event.WindowAdapter
-import java.awt.event.WindowEvent
+import java.awt.event.FocusListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import auth.User
-import auth.Role
-import auth.checkCredentials
+import java.io.File
+import java.util.ArrayList
+import java.util.List
+import javax.swing.JButton
+import javax.swing.JDialog
+import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.JPasswordField
+import javax.swing.JTextField
+import javax.swing.WindowConstants
+import javax.swing.text.JTextComponent
+import ui.et.Column
+import ui.et.EditableTable
+import ui.et.PasswordValue
+import ui.et.StringValue
+import ui.et.Value
 
 fun main(args : Array<String>) {
-    val result = askForCredentials(null, {checkCredentials(it._1, it._2)})
+    val dbPath = "database"
+    val key = "test key"
+
+    if(!File(dbPath).exists()) {
+        val db = AuthDb("database")
+        db.users.put("admin", User("admin", "admin", Role.ADMIN, 0))
+        db.save()
+        encryptFile(key, File("database"))
+    }
+
+    val result = askForCredentials(null, {checkCredentials(it._1, it._2, "test key", dbPath)})
 
     println("auth: ${result._1}")
 
-    System.exit(0)
+    if (result._1 == true) {
+        showMainWindow()
+    } else {
+        System.exit(- 1)
+    }
 }
 
 fun askForCredentials(val parent : Frame? = null, checker : (#(String, String))->Boolean) : #(Boolean, String, String) {
     val dialog = JDialog(parent, true)
 
-    dialog.setTitle("Pleasr, enter login and password")
-    dialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
+    dialog.setTitle("Enter login and password")
+    dialog.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
     dialog.setResizable(false)
     dialog.getContentPane()?.setLayout(null)
     val width = 320
     val height = 170
     dialog.setSize(width, height)
-    val screenSize = Toolkit.defaultToolkit?.getScreenSize().sure()
+    val screenSize = Toolkit.getDefaultToolkit()?.getScreenSize()!!
     val x = (screenSize.width - width) / 2
     val y = (screenSize.height - height) / 2
     dialog.setLocation(x.toInt(), y.toInt())
@@ -56,12 +78,11 @@ fun askForCredentials(val parent : Frame? = null, checker : (#(String, String))-
 
     val errorLabel = JLabel("")
     errorLabel.setBounds(60, 78, 200, 24)
-    errorLabel.setHorizontalTextPosition(0);
-    errorLabel.setVerticalTextPosition(0);
+    errorLabel.setHorizontalTextPosition(0)
+    errorLabel.setVerticalTextPosition(0)
     errorLabel.setForeground(Color.RED)
 
     dialog.getContentPane()?.add(errorLabel)
-
 
     val okButton = JButton("Ok")
     okButton.setBounds(57, 112, 100, 24)
@@ -71,20 +92,19 @@ fun askForCredentials(val parent : Frame? = null, checker : (#(String, String))-
     cancelButton.setBounds(163, 112, 100, 24)
     dialog.getContentPane()?.add(cancelButton)
 
-
-    dialog.addWindowListener(object : WindowAdapter() {
-        override fun windowGainedFocus(e: WindowEvent?) {
-            okButton.requestFocusInWindow();
-        }
-    });
+    //    dialog.addWindowListener(object : WindowAdapter() {
+    //        override fun windowGainedFocus(e : WindowEvent?) {
+    //// todo           okButton.requestFocusInWindow()
+    //        }
+    //    })
 
     var auth = false
 
     val clickHandler = object : MouseAdapter() {
-        override fun mouseClicked(e: MouseEvent?) {
+        public override fun mouseClicked(e : MouseEvent?) {
             when (e?.getSource()) {
                 okButton ->
-                    if(!checker(#(loginField.getText().sure(), passwordField.getText().sure()))) {
+                    if(!checker(#(loginField.getText()!!, passwordField.getText()!!))) {
                         errorLabel.setText("Incorrect login-password pair")
                     } else {
                         auth = true
@@ -101,7 +121,7 @@ fun askForCredentials(val parent : Frame? = null, checker : (#(String, String))-
 
     dialog.setVisible(true)
 
-    return #(auth, loginField.getText().sure(), passwordField.getText().sure())
+    return #(auth, loginField.getText()!!, passwordField.getText()!!)
 }
 
 class PlaceHolder(val component : JTextComponent, val placeholder : String) : FocusListener {
@@ -112,20 +132,40 @@ class PlaceHolder(val component : JTextComponent, val placeholder : String) : Fo
         focusLost(null)
     }
 
-    override fun focusGained(e: FocusEvent? = null) {
+    public override fun focusGained(e : FocusEvent? = null) {
         if (placeholderMode) {
-            component.setForeground(componentColor);
+            component.setForeground(componentColor)
             component.setText("")
             placeholderMode = false
         }
     }
 
-    override fun focusLost(e: FocusEvent?) {
+    public override fun focusLost(e : FocusEvent?) {
         componentColor = component.getForeground()
         if (component.getText()?.trim()?.length == 0) {
-            component.setForeground(Color.GRAY);
-            component.setText(placeholder);
+            component.setForeground(Color.GRAY)
+            component.setText(placeholder)
             placeholderMode = true
         }
     }
+}
+
+fun showMainWindow() {
+    val frame = JFrame("Users list")
+    frame.setLayout(null)
+    frame.setBounds(100, 100, 600, 600)
+    frame.setResizable(false)
+    frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
+
+    val table = EditableTable(arrayList(Column("column_1"), Column("column_2")))
+    frame.add(table.getScrollPane(10, 10, 580, 560))
+
+    val data = ArrayList<List<Value>>()
+    data.add(arrayList(StringValue("test_1_1"), PasswordValue("test_2_1")))
+    data.add(arrayList(StringValue("test_1_2"), PasswordValue("test_2_2")))
+    data.add(arrayList(StringValue("test_1_3"), PasswordValue("test_2_3")))
+    data.add(arrayList(StringValue("test_1_4"), PasswordValue("test_2_4")))
+    table.data = data
+
+    frame.setVisible(true)
 }

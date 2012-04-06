@@ -1,15 +1,11 @@
 package fs
 
 import java.io.File
-import java.util.regex.Pattern
-import java.util.regex.Matcher
-import java.util.List
-import java.util.LinkedList
 import java.io.FileInputStream
-import java.io.BufferedReader
-import java.io.InputStreamReader
+import java.util.LinkedList
+import java.util.List
+import java.util.regex.Pattern
 import org.apache.commons.codec.digest.DigestUtils
-import org.junit.Test
 import org.apache.commons.io.FileUtils
 
 trait Criterion {
@@ -29,7 +25,7 @@ class LastModifiedCriterion(val minDate : Long = 0, val maxDate : Long = Long.MA
 }
 
 class ContentCriterion(val str : String = "") : Criterion {
-    override fun check(file: File) = file.contains(str)
+    override fun check(file : File) = file.contains(str)
 }
 
 class FileInfo(val file : File) {

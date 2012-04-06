@@ -10,10 +10,11 @@ import crypt.decryptFile
 import java.util.Map
 import java.util.List
 import java.util.LinkedList
+import sun.tools.jconsole.Plotter.Unit
 
 class AuthDb(val dbPath : String) {
     // login -> user
-    val users = LinkedHashMap<String, User>()
+    public val users : Map<String, User> = LinkedHashMap<String, User>()
 
     fun load() {
         users.clear()
@@ -41,9 +42,9 @@ class User(val login : String, val password : String, val role : Role, val lastM
 
     //todo think about password hashing
 
-    fun toString() = "${login} ${password} ${if (role==Role.ADMIN) 0 else 1} $lastModified"
+    fun toString() = "${login} ${password} ${if (role == Role.ADMIN) 0 else 1} $lastModified"
 
-    fun asB64String() = "${login.toB64()} ${password.toB64()} ${if (role==Role.ADMIN) 0 else 1} $lastModified"
+    fun asB64String() = "${login.toB64()} ${password.toB64()} ${if (role == Role.ADMIN) 0 else 1} $lastModified"
 }
 
 fun Map<String, User>.b64Values() : List<String> {
@@ -60,12 +61,16 @@ fun String.toB64() = Base64.encodeBase64URLSafeString(this.getBytes()).sure()
 
 fun String.fromB64() = StringUtils.newStringUtf8(Base64.decodeBase64(this.getBytes())).sure()
 
-fun checkCredentials(val login : String, val password : String, val dbPath : String = "database") : Boolean {
-    decryptFile("test key", File(dbPath))
+fun checkCredentials(val login : String, val password : String, val key : String = "test key", val dbPath : String = "database") : Boolean {
+    decryptFile(key, File(dbPath))
     val db = AuthDb(dbPath)
     db.load()
     val result = db.users.get(login)?.password.equals(password)
-    encryptFile("test key", File(dbPath))
+    encryptFile(key, File(dbPath))
+
+    if (db.users.size == 0) {
+        return true
+    }
 
     return result
 }

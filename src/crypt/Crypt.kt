@@ -1,13 +1,12 @@
 package crypt
 
-import org.apache.commons.codec.digest.DigestUtils
-import org.jasypt.util.text.BasicTextEncryptor as TextEncryptor
 import java.io.File
 import java.io.PrintWriter
-import java.io.BufferedReader
-import java.io.InputStreamReader
-import java.io.FileInputStream
 import org.apache.commons.io.FileUtils
+import org.jasypt.util.text.BasicTextEncryptor as TextEncryptor
+import auth.AuthDb
+import auth.User
+import auth.Role
 
 // Algorithm: PBEWithMD5AndDES
 // Key obtention iterations: 1000
@@ -33,4 +32,4 @@ fun decryptFile(key : String, from : File, onlyRead : Boolean = false, to : File
     return content
 }
 
-fun File.getLines() = FileUtils.readFileToString(this).sure()
+fun File.getLines() = FileUtils.readFileToString(this)!!
