@@ -55,7 +55,7 @@ fun askForCredentials(val parent : Frame? = null, checker : (#(String, String))-
     val dialog = JDialog(parent, true)
 
     dialog.setTitle("Enter login and password")
-    dialog.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+    dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
     dialog.setResizable(false)
     dialog.getContentPane()?.setLayout(null)
     val width = 320
