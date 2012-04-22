@@ -40,10 +40,12 @@ class EditableTable(val columns : List<Column>) {
                 public override fun getColumnName(column : Int) = columns[column].name
 
                 public override fun setValueAt(newValue : Any?, row : Int, column : Int) {
-                    if(data[row][column] is StringValue && !(data[row][column] as StringValue).str.equals( newValue)) {
-                        val changed = columns[column].onChanged()
+                    if(data[row][column] is StringValue && !(data[row][column] as StringValue).str.equals(newValue)) {
+                        val changed = columns[column].onChanged(if(newValue is StringValue) newValue.str else newValue as String)
                         if(changed != null) {
-                            setValueAt(changed._2, row, changed._1)
+                            for(change in changed) {
+                                setValueAt(change._2, row, change._1)
+                            }
                         }
                     }
                     data[row][column] = if (newValue is String) StringValue(newValue) else newValue as Value
@@ -68,7 +70,7 @@ class EditableTable(val columns : List<Column>) {
 val doNothing = {null}
 
 open class Column(val name : String, val editable : Boolean = true) {
-    public open fun onChanged() : #(Int, Any?)? = null
+    public open fun onChanged(val value : String) : List<#(Int, Any?)>? = null
 }
 
 trait Value
