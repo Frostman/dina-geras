@@ -5,15 +5,16 @@ import java.util.List
 import javax.swing.JFrame
 import javax.swing.JScrollPane
 import javax.swing.JTable
-import javax.swing.table.AbstractTableModel
-import javax.swing.table.TableCellEditor
+import javax.swing.ListSelectionModel
 import javax.swing.WindowConstants
+import javax.swing.table.AbstractTableModel
 
 class EditableTable(val columns : List<Column>) {
-    val table = JTable();
+    public val table : JTable = JTable();
 
     {
         table.setAutoCreateRowSorter(true)
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION)
     }
 
     fun getScrollPane(x : Int, y : Int, width : Int, height : Int) : JScrollPane {
@@ -28,40 +29,57 @@ class EditableTable(val columns : List<Column>) {
         return scroll
     }
 
-    var data : List<List<Value>> = ArrayList<List<Value>>()
-    set(newData) {
-        $data = newData
-        table.setModel(object : AbstractTableModel() {
-            public override fun getRowCount() = data.size()
-            public override fun getColumnCount() = columns.size()
-            public override fun getValueAt(row : Int, column : Int) = data[row][column]
-            public override fun isCellEditable(row : Int, column : Int) = columns[column].editable
-            public override fun getColumnName(column : Int) = columns[column].name
+    public var data : List<List<Value>> = ArrayList<List<Value>>()
+        set(newData) {
+            $data = newData
+            table.setModel(object : AbstractTableModel() {
+                public override fun getRowCount() = data.size()
+                public override fun getColumnCount() = columns.size()
+                public override fun getValueAt(row : Int, column : Int) = data[row][column]
+                public override fun isCellEditable(row : Int, column : Int) = columns[column].editable
+                public override fun getColumnName(column : Int) = columns[column].name
 
-            public override fun setValueAt(newValue : Any?, row : Int, column : Int) {
-                data[row][column] = if (newValue is String) StringValue(newValue) else newValue as Value
-                fireTableCellUpdated(row, column)
-            }
-        })
-        var idx = 0
-        for (column in columns) {
-            table.getColumnModel()!!.getColumn(idx++)!!.setCellEditor(column.editor)
+                public override fun setValueAt(newValue : Any?, row : Int, column : Int) {
+                    if(data[row][column] is StringValue && !(data[row][column] as StringValue).str.equals( newValue)) {
+                        val changed = columns[column].onChanged()
+                        if(changed != null) {
+                            setValueAt(changed._2, row, changed._1)
+                        }
+                    }
+                    data[row][column] = if (newValue is String) StringValue(newValue) else newValue as Value
+                    fireTableCellUpdated(row, column)
+                }
+            })
+            //        var idx = 0
+            //        for (column in columns) {
+            //            table.getColumnModel()!!.getColumn(idx++)!!.setCellEditor(column.editor)
+            //        }
         }
-    }
 
+    fun <T> getObjects(transform : List<Value>.() -> T) = data.map{it.transform()}
+
+    fun removeSelected() {
+        val selected = table.convertRowIndexToModel(table.getSelectedRow())
+        data.remove(selected)
+        data = data
+    }
 }
 
-class Column(val name : String, val editable : Boolean = true, val editor : TableCellEditor? = null)
+val doNothing = {null}
+
+open class Column(val name : String, val editable : Boolean = true) {
+    public open fun onChanged() : #(Int, Any?)? = null
+}
 
 trait Value
 
 trait ValueEditor
 
-class StringValue(val str : String) : Value {
+class StringValue(public val str : String) : Value {
     fun toString() : String = str
 }
 
-class PasswordValue(val password : String) : Value {
+class PasswordValue(public val password : String) : Value {
     fun toString() : String = password
 }
 

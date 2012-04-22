@@ -13,25 +13,22 @@ import java.awt.event.FocusListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
-import java.util.ArrayList
-import java.util.List
 import javax.swing.JButton
 import javax.swing.JDialog
+import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JLabel
 import javax.swing.JPasswordField
 import javax.swing.JTextField
 import javax.swing.WindowConstants
 import javax.swing.text.JTextComponent
-import ui.et.Column
 import ui.et.EditableTable
-import ui.et.PasswordValue
-import ui.et.StringValue
-import ui.et.Value
+import crypt.decryptFile
+
+public val key : String = "test key"
 
 fun main(args : Array<String>) {
     val dbPath = "database"
-    val key = "test key"
 
     if(!File(dbPath).exists()) {
         val db = AuthDb("database")
@@ -40,12 +37,12 @@ fun main(args : Array<String>) {
         encryptFile(key, File("database"))
     }
 
-    val result = askForCredentials(null, {checkCredentials(it._1, it._2, "test key", dbPath)})
+    val result = askForCredentials(null, {checkCredentials(it._1, it._2, key, dbPath)})
 
     println("auth: ${result._1}")
 
     if (result._1 == true) {
-        showMainWindow()
+        showVariantsWindow(null, result._2)
     } else {
         System.exit(- 1)
     }
@@ -150,22 +147,180 @@ class PlaceHolder(val component : JTextComponent, val placeholder : String) : Fo
     }
 }
 
-fun showMainWindow() {
+fun showVariantsWindow(val parent : Frame? = null, val username : String) {
+    val user = auth.getUser(username)!!
+
+    val dialog = JDialog(parent, true)
+
+    dialog.setTitle("What do you want?")
+    dialog.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE)
+    dialog.setResizable(false)
+    dialog.getContentPane()?.setLayout(null)
+
+    dialog.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
+
+    val width = 320
+    val height = 190
+    dialog.setSize(width, height)
+    val screenSize = Toolkit.getDefaultToolkit()?.getScreenSize()!!
+    val x = (screenSize.width - width) / 2
+    val y = (screenSize.height - height) / 2
+    dialog.setLocation(x.toInt(), y.toInt())
+
+    val loginField = JTextField("login: " + username)
+    loginField.setBounds(60, 10, 200, 24)
+    loginField.setEditable(false)
+    dialog.getContentPane()?.add(loginField)
+
+    val roleField = JTextField("role: " + if (user.role == Role.ADMIN) "admin" else "user")
+    roleField.setBounds(60, 44, 200, 24)
+    roleField.setEditable(false)
+    dialog.getContentPane()?.add(roleField)
+
+    val usersButton = JButton("Users")
+    usersButton.setBounds(60, 78, 80, 25)
+    dialog.getContentPane()?.add(usersButton)
+
+    val confButton = JButton("Config")
+    confButton.setBounds(60, 108, 80, 25)
+    dialog.getContentPane()?.add(confButton)
+
+    val exitButton = JButton("Exit")
+    exitButton.setBounds(60, 138, 80, 25)
+    dialog.getContentPane()?.add(exitButton)
+
+    val encryptButton = JButton("Encrypt")
+    encryptButton.setBounds(180, 78, 80, 25)
+    dialog.getContentPane()?.add(encryptButton)
+
+    val decryptButton = JButton("Decrypt")
+    decryptButton.setBounds(180, 108, 80, 25)
+    dialog.getContentPane()?.add(decryptButton)
+
+    val searchButton = JButton("Search")
+    searchButton.setBounds(180, 138, 80, 25)
+    dialog.getContentPane()?.add(searchButton)
+
+    val clickHandler = object : MouseAdapter() {
+        public override fun mouseClicked(e : MouseEvent?) {
+            when (e?.getSource()) {
+                usersButton -> {
+                    showUsersListWindow(username)
+                    dialog.dispose()
+                }
+
+                confButton -> {
+                    dialog.dispose()
+                }
+
+                exitButton -> {
+                    System.exit(- 1)
+                }
+
+                encryptButton -> {
+                    val fc = JFileChooser()
+                    fc.setFileSelectionMode(JFileChooser.FILES_ONLY)
+                    fc.setMultiSelectionEnabled(false)
+                    if(JFileChooser.APPROVE_OPTION == fc.showOpenDialog(dialog)){
+                        val file = fc.getSelectedFile()!!
+                        encryptFile(user.password, file, File(file.getAbsolutePath() + ".enc"))
+                    }
+                }
+
+                decryptButton -> {
+                    val fc = JFileChooser()
+                    fc.setFileSelectionMode(JFileChooser.FILES_ONLY)
+                    fc.setMultiSelectionEnabled(false)
+                    if(JFileChooser.APPROVE_OPTION == fc.showOpenDialog(dialog)){
+                        val file = fc.getSelectedFile()!!
+                        decryptFile(user.password, file, false, File(file.getAbsolutePath() + ".dec"))
+                    }
+                }
+
+                searchButton -> {
+                    dialog.dispose()
+                }
+
+                else -> println("unknown click source")
+            }
+        }
+    }
+
+    usersButton.addMouseListener(clickHandler)
+    confButton.addMouseListener(clickHandler)
+    exitButton.addMouseListener(clickHandler)
+    encryptButton.addMouseListener(clickHandler)
+    decryptButton.addMouseListener(clickHandler)
+    searchButton.addMouseListener(clickHandler)
+
+    dialog.setVisible(true)
+}
+
+fun showUsersListWindow(val username : String) {
     val frame = JFrame("Users list")
     frame.setLayout(null)
-    frame.setBounds(100, 100, 600, 600)
+    frame.setBounds(100, 100, 600, 650)
     frame.setResizable(false)
-    frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE)
+    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
 
-    val table = EditableTable(arrayList(Column("column_1"), Column("column_2")))
+    val table = EditableTable(User.columns)
     frame.add(table.getScrollPane(10, 10, 580, 560))
 
-    val data = ArrayList<List<Value>>()
-    data.add(arrayList(StringValue("test_1_1"), PasswordValue("test_2_1")))
-    data.add(arrayList(StringValue("test_1_2"), PasswordValue("test_2_2")))
-    data.add(arrayList(StringValue("test_1_3"), PasswordValue("test_2_3")))
-    data.add(arrayList(StringValue("test_1_4"), PasswordValue("test_2_4")))
-    table.data = data
+    val db = AuthDb("database")
+    db.load(true)
+    table.data = db.users.values().map{it.asColumns()}
+
+    val saveButton = JButton("Save")
+    saveButton.setBounds(10, 590, 100, 30)
+    frame.add(saveButton)
+
+    val closeButton = JButton("Menu")
+    closeButton.setBounds(150, 590, 100, 30)
+    frame.add(closeButton)
+
+    val addButton = JButton("Add")
+    addButton.setBounds(350, 590, 100, 30)
+    frame.add(addButton)
+
+    val remButton = JButton("Remove")
+    remButton.setBounds(490, 590, 100, 30)
+    frame.add(remButton)
+
+    val clickHandler = object : MouseAdapter() {
+        public override fun mouseClicked(e : MouseEvent?) {
+            when (e?.getSource()) {
+                saveButton -> {
+                    db.users.clear()
+                    for (user in table.getObjects{User.fromColumns(this)}) {
+                        db.users.put(user.login, user)
+                    }
+                    db.save(true)
+                }
+
+                closeButton -> {
+                    frame.setVisible(false)
+                    frame.dispose()
+                    showVariantsWindow(null, username)
+                }
+
+                addButton -> {
+                    table.data.add(User("NAME", "PASSWORD", Role.USER, System.currentTimeMillis()).asColumns())
+                    table.data = table.data
+                }
+
+                remButton -> {
+                    table.removeSelected()
+                }
+
+                else -> println("unknown click source")
+            }
+        }
+    }
+
+    saveButton.addMouseListener(clickHandler)
+    closeButton.addMouseListener(clickHandler)
+    addButton.addMouseListener(clickHandler)
+    remButton.addMouseListener(clickHandler)
 
     frame.setVisible(true)
 }
