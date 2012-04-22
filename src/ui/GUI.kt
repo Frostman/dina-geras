@@ -4,6 +4,7 @@ import auth.AuthDb
 import auth.Role
 import auth.User
 import auth.checkCredentials
+import crypt.decryptFile
 import crypt.encryptFile
 import java.awt.Color
 import java.awt.Frame
@@ -23,7 +24,6 @@ import javax.swing.JTextField
 import javax.swing.WindowConstants
 import javax.swing.text.JTextComponent
 import ui.et.EditableTable
-import crypt.decryptFile
 
 public val key : String = "test key"
 
@@ -179,10 +179,16 @@ fun showVariantsWindow(val parent : Frame? = null, val username : String) {
 
     val usersButton = JButton("Users")
     usersButton.setBounds(60, 78, 80, 25)
+    if(user.role != Role.ADMIN) {
+        usersButton.setEnabled(false)
+    }
     dialog.getContentPane()?.add(usersButton)
 
     val confButton = JButton("Config")
     confButton.setBounds(60, 108, 80, 25)
+    if(user.role != Role.ADMIN) {
+        confButton.setEnabled(false)
+    }
     dialog.getContentPane()?.add(confButton)
 
     val exitButton = JButton("Exit")
@@ -205,12 +211,16 @@ fun showVariantsWindow(val parent : Frame? = null, val username : String) {
         public override fun mouseClicked(e : MouseEvent?) {
             when (e?.getSource()) {
                 usersButton -> {
-                    showUsersListWindow(username)
-                    dialog.dispose()
+                    if(user.role == Role.ADMIN) {
+                        showUsersListWindow(username)
+                        dialog.dispose()
+                    }
                 }
 
                 confButton -> {
-                    dialog.dispose()
+                    if(user.role == Role.ADMIN) {
+                        dialog.dispose()
+                    }
                 }
 
                 exitButton -> {
@@ -323,4 +333,8 @@ fun showUsersListWindow(val username : String) {
     remButton.addMouseListener(clickHandler)
 
     frame.setVisible(true)
+}
+
+fun showConfWindow() {
+
 }
