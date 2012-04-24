@@ -24,6 +24,7 @@ import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JFrame
 import javax.swing.JLabel
+import javax.swing.JOptionPane
 import javax.swing.JPasswordField
 import javax.swing.JTextField
 import javax.swing.WindowConstants
@@ -492,7 +493,37 @@ fun showSearchWindow(val key : String, val username : String) {
         }
 
         fun doSearch() : List<FileInfo> {
-            println("search")
+            try{
+                val rootPath = File(rootPathField.getText()!!)
+                if(!rootPath.isDirectory()) {
+                    JOptionPane.showMessageDialog(frame, "Root path is not a folder", "Error", JOptionPane.ERROR_MESSAGE)
+                    return ArrayList<FileInfo>()
+                }
+
+                val fileName = fileNameField.getText()!!
+                if(fileName.trim().isEmpty()) {
+                    JOptionPane.showMessageDialog(frame, "File name is not specified", "Error", JOptionPane.ERROR_MESSAGE)
+                    return ArrayList<FileInfo>()
+                }
+
+                val sizeRange = fileSizeField.getText()!!.split("-")!!
+                if(sizeRange.size != 2) {
+                    JOptionPane.showMessageDialog(frame, "Size range is incorrect or not specified", "Error", JOptionPane.ERROR_MESSAGE)
+                    return ArrayList<FileInfo>()
+                }
+
+                val minSize = sizeRange[0]!!.toInt()
+                val maxSize = sizeRange[1]!!.toInt()
+
+                // impl date check
+
+                val substring = substringField.getText()!!
+
+
+            }catch(e : Exception) {
+                JOptionPane.showMessageDialog(frame, "Internal error", "Error", JOptionPane.ERROR_MESSAGE)
+                e.printStackTrace()
+            }
 
             return ArrayList<FileInfo>()
         }
