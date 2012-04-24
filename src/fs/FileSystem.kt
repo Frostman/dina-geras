@@ -13,7 +13,7 @@ trait Criterion {
 }
 
 class NameCriterion(val namePattern : String = "") : Criterion {
-    override fun check(file : File) = file.getName().sure().matchesPattern(namePattern)
+    override fun check(file : File) = file.getName()!!.matchesPattern(namePattern)
 }
 
 class SizeCriterion(val minSize : Long = 0, val maxSize : Long = Long.MAX_VALUE) : Criterion {
@@ -32,10 +32,10 @@ class FileInfo(val file : File) {
     val hash = file.shaHex()
 
     val path : String
-    get() = file.getAbsolutePath().sure()
+    get() = file.getAbsolutePath()!!
 
     val name : String
-    get() = file.getName().sure()
+    get() = file.getName()!!
 
     fun toString() : String {
         return path + "  ::  " + hash
@@ -51,8 +51,8 @@ public fun searchFiles(rootPath : String, vararg criteria : Criterion) : List<Fi
 
 fun fileWalk(val file : File, val result : List<FileInfo>, val criteria : Array<Criterion>) {
     if (file.isDirectory()) {
-        for (subFile in file.listFiles().sure()) {
-            fileWalk(subFile.sure(), result, criteria)
+        for (subFile in file.listFiles()!!) {
+            fileWalk(subFile!!, result, criteria)
         }
     } else if (file.isFile()){
         var good = true
@@ -65,7 +65,7 @@ fun fileWalk(val file : File, val result : List<FileInfo>, val criteria : Array<
 
 fun File.contains(val str : String) = this.getLines().contains(str)
 
-fun File.getLines() = FileUtils.readFileToString(this).sure()
+fun File.getLines() = FileUtils.readFileToString(this)!!
 
 fun File.shaHex() = DigestUtils.shaHex(FileInputStream(this))
 
