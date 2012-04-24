@@ -6,6 +6,7 @@ import auth.User
 import auth.checkCredentials
 import crypt.decryptFile
 import crypt.encryptFile
+import fs.FileInfo
 import java.awt.Color
 import java.awt.Frame
 import java.awt.Toolkit
@@ -14,8 +15,11 @@ import java.awt.event.FocusListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
+import java.util.ArrayList
+import java.util.List
 import java.util.Map
 import javax.swing.JButton
+import javax.swing.JCheckBox
 import javax.swing.JDialog
 import javax.swing.JFileChooser
 import javax.swing.JFrame
@@ -24,11 +28,10 @@ import javax.swing.JPasswordField
 import javax.swing.JTextField
 import javax.swing.WindowConstants
 import javax.swing.text.JTextComponent
+import ui.et.Column
 import ui.et.EditableTable
 import ui.et.StringValue
 import ui.et.Value
-import java.util.List
-import ui.et.Column
 
 public val key : String = "test key"
 
@@ -247,7 +250,7 @@ fun showVariantsWindow(val parent : Frame? = null, val username : String) {
                     fc.setMultiSelectionEnabled(false)
                     if(JFileChooser.APPROVE_OPTION == fc.showOpenDialog(dialog)){
                         val file = fc.getSelectedFile()!!
-                        encryptFile(user.password, file, File(file.getAbsolutePath() + ".enc"))
+                        encryptFile(user.login + "#" + user.password, file, File(file.getAbsolutePath() + ".enc"))
                     }
                 }
 
@@ -257,11 +260,12 @@ fun showVariantsWindow(val parent : Frame? = null, val username : String) {
                     fc.setMultiSelectionEnabled(false)
                     if(JFileChooser.APPROVE_OPTION == fc.showOpenDialog(dialog)){
                         val file = fc.getSelectedFile()!!
-                        decryptFile(user.password, file, false, File(file.getAbsolutePath() + ".dec"))
+                        decryptFile(user.login + "#" + user.password, file, false, File(file.getAbsolutePath() + ".dec"))
                     }
                 }
 
                 searchButton -> {
+                    showSearchWindow(user.login + "#" + user.password, user.login)
                     dialog.dispose()
                 }
 
@@ -393,6 +397,108 @@ fun showConfWindow(val username : String) {
         }
     }
 
+    saveButton.addMouseListener(clickHandler)
+    closeButton.addMouseListener(clickHandler)
+
+    frame.setVisible(true)
+}
+
+fun showSearchWindow(val key : String, val username : String) {
+    val frame = JFrame("Search")
+    frame.setLayout(null)
+    frame.setBounds(100, 100, 600, 280)
+    frame.setResizable(false)
+    frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
+
+    val rootPathLabel = JLabel("Root path")
+    rootPathLabel.setBounds(10, 10, 200, 30)
+    frame.add(rootPathLabel)
+
+    val rootPathField = JTextField()
+    rootPathField.setBounds(210, 10, 350, 30)
+    rootPathField.addFocusListener(PlaceHolder(rootPathField, "smth like: C:\\Users\\Dina\\"))
+    frame.add(rootPathField)
+
+    val fileNameLabel = JLabel("File name")
+    fileNameLabel.setBounds(10, 50, 200, 30)
+    frame.add(fileNameLabel)
+
+    val fileNameField = JTextField()
+    fileNameField.setBounds(210, 50, 350, 30)
+    fileNameField.addFocusListener(PlaceHolder(fileNameField, "smth like: file*00.* or *.txt"))
+    frame.add(fileNameField)
+
+    val fileSizeLabel = JLabel("File size (min-max), KB")
+    fileSizeLabel.setBounds(10, 90, 200, 30)
+    frame.add(fileSizeLabel)
+
+    val fileSizeField = JTextField("0 - 1024")
+    fileSizeField.setBounds(210, 90, 350, 30)
+    frame.add(fileSizeField)
+
+    val dateLabel = JLabel("File last changed (min-max)")
+    dateLabel.setBounds(10, 130, 200, 30)
+    frame.add(dateLabel)
+
+    var dateField = JTextField()
+    dateField.setBounds(210, 130, 350, 30)
+    dateField.addFocusListener(PlaceHolder(dateField, "1.4.2012-1.5.2012"))
+    frame.add(dateField)
+
+    val substringLabel = JLabel("Substring")
+    substringLabel.setBounds(10, 170, 200, 30)
+    frame.add(substringLabel)
+
+    val substringField = JTextField()
+    substringField.setBounds(210, 170, 350, 30)
+    substringField.addFocusListener(PlaceHolder(substringField, "some substring to search in file"))
+    frame.add(substringField)
+
+    val searchButton = JButton("Search")
+    searchButton.setBounds(10, 220, 100, 30)
+    frame.add(searchButton)
+
+    val saveButton = JButton("Save as")
+    saveButton.setBounds(150, 220, 100, 30)
+    frame.add(saveButton)
+
+    val encryptFlag = JCheckBox("Encrypt result?");
+    encryptFlag.setBounds(290, 220, 200, 30)
+    frame.add(encryptFlag)
+
+    val closeButton = JButton("Menu")
+    closeButton.setBounds(490, 220, 100, 30)
+    frame.add(closeButton)
+
+    val clickHandler = object : MouseAdapter() {
+        public override fun mouseClicked(e : MouseEvent?) {
+            when (e?.getSource()) {
+                searchButton -> {
+                    doSearch()
+                }
+
+                saveButton -> {
+                    doSearch()
+                }
+
+                closeButton -> {
+                    frame.setVisible(false)
+                    frame.dispose()
+                    showVariantsWindow(null, username)
+                }
+
+                else -> println("unknown click source")
+            }
+        }
+
+        fun doSearch() : List<FileInfo> {
+            println("search")
+
+            return ArrayList<FileInfo>()
+        }
+    }
+
+    searchButton.addMouseListener(clickHandler)
     saveButton.addMouseListener(clickHandler)
     closeButton.addMouseListener(clickHandler)
 
