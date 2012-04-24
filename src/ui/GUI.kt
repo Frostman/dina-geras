@@ -33,6 +33,11 @@ import ui.et.Column
 import ui.et.EditableTable
 import ui.et.StringValue
 import ui.et.Value
+import fs.searchFiles
+import fs.NameCriterion
+import fs.SizeCriterion
+import fs.LastModifiedCriterion
+import fs.ContentCriterion
 
 public val key : String = "test key"
 
@@ -512,14 +517,14 @@ fun showSearchWindow(val key : String, val username : String) {
                     return ArrayList<FileInfo>()
                 }
 
-                val minSize = sizeRange[0]!!.toInt()
-                val maxSize = sizeRange[1]!!.toInt()
+                val minSize = sizeRange[0]!!.trim().toLong() * 1024
+                val maxSize = sizeRange[1]!!.trim().toLong() * 1024
 
                 // impl date check
 
                 val substring = substringField.getText()!!
 
-
+                return searchFiles(rootPath.getAbsolutePath()!!, NameCriterion(fileName), SizeCriterion(minSize, maxSize), LastModifiedCriterion(), ContentCriterion(if (substring.equals("some substring to search in file")) "" else substring))
             }catch(e : Exception) {
                 JOptionPane.showMessageDialog(frame, "Internal error", "Error", JOptionPane.ERROR_MESSAGE)
                 e.printStackTrace()
