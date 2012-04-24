@@ -6,7 +6,12 @@ import auth.User
 import auth.checkCredentials
 import crypt.decryptFile
 import crypt.encryptFile
+import fs.ContentCriterion
 import fs.FileInfo
+import fs.LastModifiedCriterion
+import fs.NameCriterion
+import fs.SizeCriterion
+import fs.searchFiles
 import java.awt.Color
 import java.awt.Frame
 import java.awt.Toolkit
@@ -16,6 +21,7 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
 import java.util.ArrayList
+import java.util.Date
 import java.util.List
 import java.util.Map
 import javax.swing.JButton
@@ -33,11 +39,6 @@ import ui.et.Column
 import ui.et.EditableTable
 import ui.et.StringValue
 import ui.et.Value
-import fs.searchFiles
-import fs.NameCriterion
-import fs.SizeCriterion
-import fs.LastModifiedCriterion
-import fs.ContentCriterion
 
 public val key : String = "test key"
 
@@ -442,13 +443,13 @@ fun showSearchWindow(val key : String, val username : String) {
     fileSizeField.setBounds(210, 90, 350, 30)
     frame.add(fileSizeField)
 
-    val dateLabel = JLabel("File last changed (min-max)")
+    val dateLabel = JLabel("File last change (min-max)")
     dateLabel.setBounds(10, 130, 200, 30)
     frame.add(dateLabel)
 
     var dateField = JTextField()
     dateField.setBounds(210, 130, 350, 30)
-    dateField.addFocusListener(PlaceHolder(dateField, "1.4.2012-1.5.2012"))
+    dateField.addFocusListener(PlaceHolder(dateField, "1.1.2000-1.1.2020"))
     frame.add(dateField)
 
     val substringLabel = JLabel("Substring")
@@ -480,7 +481,7 @@ fun showSearchWindow(val key : String, val username : String) {
         public override fun mouseClicked(e : MouseEvent?) {
             when (e?.getSource()) {
                 searchButton -> {
-                    doSearch()
+                    JOptionPane.showMessageDialog(frame, "${doSearch().size} file(s) has been found", "Search results", JOptionPane.INFORMATION_MESSAGE)
                 }
 
                 saveButton -> {
@@ -520,11 +521,19 @@ fun showSearchWindow(val key : String, val username : String) {
                 val minSize = sizeRange[0]!!.trim().toLong() * 1024
                 val maxSize = sizeRange[1]!!.trim().toLong() * 1024
 
-                // impl date check
+                val dateRange = dateField.getText()!!.split("-")!!
+                if(dateRange.size != 2) {
+                    JOptionPane.showMessageDialog(frame, "Date range is incorrect or not specified", "Error", JOptionPane.ERROR_MESSAGE)
+                    return ArrayList<FileInfo>()
+                }
+                val minDateArr = dateRange[0]!!.split("[.]")!!
+                val minDate = Date(minDateArr[2]!!.toInt() - 1900, minDateArr[1]!!.toInt() - 1, minDateArr[0]!!.toInt())
+                val maxDateArr = dateRange[1]!!.split("[.]")!!
+                val maxDate = Date(maxDateArr[2]!!.toInt() - 1900, maxDateArr[1]!!.toInt() - 1, maxDateArr[0]!!.toInt())
 
                 val substring = substringField.getText()!!
 
-                return searchFiles(rootPath.getAbsolutePath()!!, NameCriterion(fileName), SizeCriterion(minSize, maxSize), LastModifiedCriterion(), ContentCriterion(if (substring.equals("some substring to search in file")) "" else substring))
+                return searchFiles(rootPath.getAbsolutePath()!!, NameCriterion(fileName), SizeCriterion(minSize, maxSize), LastModifiedCriterion(minDate.getTime(), maxDate.getTime()), ContentCriterion(if (substring.equals("some substring to search in file")) "" else substring))
             }catch(e : Exception) {
                 JOptionPane.showMessageDialog(frame, "Internal error", "Error", JOptionPane.ERROR_MESSAGE)
                 e.printStackTrace()
