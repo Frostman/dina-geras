@@ -485,7 +485,22 @@ fun showSearchWindow(val key : String, val username : String) {
                 }
 
                 saveButton -> {
-                    doSearch()
+                    val fc = JFileChooser()
+                    fc.setFileSelectionMode(JFileChooser.FILES_ONLY)
+                    fc.setMultiSelectionEnabled(false)
+                    if(JFileChooser.APPROVE_OPTION == fc.showOpenDialog(frame)) {
+                        val file = fc.getSelectedFile()!!
+                        val results = doSearch()
+                        val sb = StringBuilder()
+                        for(result in results) {
+                            sb.append(result.toString())!!.append("\n")
+                        }
+                        file.writeText(sb.toString()!!)
+
+                        if(encryptFlag.isSelected()) {
+                            encryptFile(key, file)
+                        }
+                    }
                 }
 
                 closeButton -> {
